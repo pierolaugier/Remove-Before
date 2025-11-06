@@ -1,0 +1,94 @@
+<script>
+(function(){
+  const COUNTAPI_HIT_URL = 'https://api.countapi.xyz/hit/removebefore/reserve_bracelet';
+  const COUNTAPI_GET_URL = 'https://api.countapi.xyz/get/removebefore/reserve_bracelet';
+  const FEEDBACK_DELAY_MS = 700;
+
+  const btn = document.getElementById('clicker');
+  const labelSpan = document.getElementById('btn-label');
+  const inlineInsta = document.getElementById('inline-insta');
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toast-text');
+
+  let doneFlag = false;
+  let instaMode = false;
+  let toastTimer = null;
+  let labelTimer = null;
+
+  function enterInstaMode() {
+    labelSpan.classList.add('hidden');
+    inlineInsta.classList.add('show');
+    instaMode = true;
+    setTimeout(() => inlineInsta.focus(), 80);
+  }
+
+  function exitInstaMode(cancel = true) {
+    inlineInsta.classList.remove('show');
+    labelSpan.classList.remove('hidden');
+    instaMode = false;
+    inlineInsta.value = '';
+    if(!cancel) inlineInsta.blur();
+  }
+
+  function showToast(message) {
+    clearTimeout(toastTimer);
+    toastText.textContent = message;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, parseInt(getComputedStyle(document.documentElement).getPropertyValue('--toast-duration')) || 2200);
+  }
+
+  async function confirmInsta() {
+    if(!doneFlag) doneFlag = true; // déjà compté côté CountAPI
+
+    showToast('Reserved ✓');
+    clearTimeout(labelTimer);
+    labelTimer = setTimeout(() => {
+      const newText = 'Hihaaa ! You are set for the waiting list. 😎';
+      labelSpan.textContent = newText;
+      labelSpan.classList.add('small');
+      btn.setAttribute('aria-label', newText);
+      inlineInsta.disabled = true;
+      exitInstaMode(false);
+    }, FEEDBACK_DELAY_MS);
+  }
+
+  // Bouton principal : incrémente CountAPI
+  btn.addEventListener('click', async () => {
+    if(doneFlag) return;
+    doneFlag = true;
+
+    // Incrément global via CountAPI
+    try {
+      const res = await fetch(COUNTAPI_HIT_URL);
+      const data = await res.json();
+      console.log('Global clicks:', data.value);
+    } catch (err) {
+      console.error('Error counting click:', err);
+    }
+
+    enterInstaMode();
+  });
+
+  inlineInsta.addEventListener('keydown', (ev) => {
+    if(ev.key === 'Enter'){ ev.preventDefault(); confirmInsta(); }
+    else if(ev.key === 'Escape'){ ev.preventDefault(); exitInstaMode(true); }
+  });
+
+  // Optionnel : récupérer et afficher le total global au chargement
+  async function updateGlobalCount() {
+    try {
+      const res = await fetch(COUNTAPI_GET_URL);
+      const data = await res.json();
+      console.log('Global total clicks:', data.value);
+      // Si tu veux l’afficher dans un élément HTML :
+      // document.getElementById('global-count').textContent = data.value;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  updateGlobalCount();
+
+})();
+</script>
