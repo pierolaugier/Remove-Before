@@ -1,0 +1,61 @@
+
+      function showAdminModal(){
+        total=readTotal();
+        adminTotalEl.textContent=total.toLocaleString('fr-FR');
+        adminBackdrop.classList.add('show');
+        adminBackdrop.setAttribute('aria-hidden','false');
+      }
+      function hideAdminModal(){
+        adminBackdrop.classList.remove('show');
+        adminBackdrop.setAttribute('aria-hidden','true');
+      }
+      function tryAuthWithToken(token){
+        if(!token)return false;
+        if(token===ADMIN_TOKEN){showAdminModal();return true;}
+        return false;
+      }
+
+      (function checkUrlParam(){
+        try{
+          const params=new URLSearchParams(window.location.search);
+          const t=params.get(ADMIN_URL_PARAM);
+          if(t&&tryAuthWithToken(t)){
+            const url=new URL(window.location.href);
+            url.searchParams.delete(ADMIN_URL_PARAM);
+            window.history.replaceState({},document.title,url.toString());
+          }
+        }catch(e){}
+      })();
+
+      window.addEventListener('keydown',(ev)=>{
+        const isMac=navigator.platform.toUpperCase().indexOf('MAC')>=0;
+        const mod=isMac?ev.metaKey:ev.ctrlKey;
+        if(mod&&ev.shiftKey&&ev.key.toLowerCase()==='a'){
+          ev.preventDefault();
+          const token=prompt('Admin token :');
+          if(token){if(!tryAuthWithToken(token))alert('Token invalide.');}
+        }
+      });
+
+      copyBtn.addEventListener('click',async()=>{
+        try{
+          await navigator.clipboard.writeText(String(readTotal()));
+          copyBtn.textContent='Copié';
+          setTimeout(()=>copyBtn.textContent='Copier',1500);
+        }catch(e){alert('Impossible de copier dans le presse-papiers.');}
+      });
+      closeBtn.addEventListener('click',hideAdminModal);
+      adminBackdrop.addEventListener('click',(ev)=>{if(ev.target===adminBackdrop)hideAdminModal();});
+
+      window.addEventListener('storage',(ev)=>{
+        if(ev.key===STORAGE_KEY){
+          total=readTotal();
+          if(adminBackdrop.classList.contains('show')){
+            adminTotalEl.textContent=total.toLocaleString('fr-FR');
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
