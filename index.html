@@ -265,11 +265,31 @@
         },parseInt(getComputedStyle(document.documentElement).getPropertyValue('--toast-duration'))||2200);
       }
 
-      // NE PLUS incrémenter ici !
+      async function sendInstaToServer(instaName){
+        try{
+          const response = await fetch("/.netlify/functions/save_insta", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ insta: instaName })
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Unknown error");
+          console.log("✅ Insta saved:", data.client);
+        } catch (err) {
+          console.error("❌ Error saving insta:", err);
+          showToast("Error saving Insta");
+        }
+      }
+
       function confirmInsta(){
+        const instaName = inlineInsta.value.trim();
+        if(!instaName || !instaName.startsWith("@")){
+          showToast("Please enter a valid Instagram @name");
+          return;
+        }
         if(!doneFlag){
           doneFlag=true;
-          // INCRÉMENTATION supprimée !
+          sendInstaToServer(instaName); // Envoi à Netlify
         }
         showToast('Reserved ✓');
         clearTimeout(labelTimer);
@@ -283,7 +303,6 @@
         },FEEDBACK_DELAY_MS);
       }
 
-      // INCRÉMENTATION sur le premier clic
       btn.addEventListener('click',()=>{
         if(doneFlag)return;
         if(!instaMode){
@@ -361,4 +380,3 @@
   </script>
 </body>
 </html>
-
